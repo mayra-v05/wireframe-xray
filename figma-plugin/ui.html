@@ -19,15 +19,15 @@
 </style>
 
 <h1>Wireframe X-Ray Import</h1>
-<p>Kies het <code>.json</code>-bestand dat de extensie downloadt, of plak de inhoud hieronder.</p>
+<p>Choose the <code>.json</code> file the extension downloads, or paste its contents below.</p>
 
 <label class="drop" id="drop">
-  <strong>Kies of sleep een JSON-bestand</strong>
+  <strong>Choose or drop a JSON file</strong>
   <span>wireframe-….json</span>
   <input type="file" id="file" accept=".json,application/json">
 </label>
-<textarea id="paste" placeholder="…of plak de JSON hier"></textarea>
-<button id="go" disabled>Importeer als frames</button>
+<textarea id="paste" placeholder="…or paste the JSON here"></textarea>
+<button id="go" disabled>Import as frames</button>
 <div id="status" role="status"></div>
 
 <script>
@@ -43,7 +43,7 @@
 
   async function readFile(file) {
     if (!file) return;
-    setJSON(await file.text(), `Geladen: ${file.name}`);
+    setJSON(await file.text(), `Loaded: ${file.name}`);
   }
 
   $('file').addEventListener('change', (e) => readFile(e.target.files[0]));
@@ -56,7 +56,7 @@
 
   $('go').addEventListener('click', () => {
     $('go').disabled = true;
-    status('Bezig met bouwen…');
+    status('Building…');
     parent.postMessage({ pluginMessage: { type: 'import', data: json } }, '*');
   });
 
@@ -64,7 +64,7 @@
     const msg = e.data.pluginMessage;
     if (!msg) return;
     $('go').disabled = !json;
-    if (msg.type === 'done') status(`Klaar — ${msg.count} lagen aangemaakt.`);
+    if (msg.type === 'done') status(`Done — ${msg.count} layers created.`);
     if (msg.type === 'error') status(msg.message, true);
   };
 </script>

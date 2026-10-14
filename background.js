@@ -1,5 +1,5 @@
 // Wireframe X-Ray — service worker
-// Eén klik op het icoon (of Alt+Shift+W) zet de wireframe-modus aan of uit.
+// One click on the icon (or Alt+Shift+W) toggles wireframe mode on or off.
 
 const ACCENT = '#3b6cff';
 
@@ -18,19 +18,19 @@ chrome.action.onClicked.addListener(async (tab) => {
     });
     await setBadge(tab.id, result);
   } catch (err) {
-    // chrome://, de Web Store en andere beschermde pagina's staan geen scripts toe.
+    // chrome://, the Web Store and other protected pages don't allow scripts.
     await chrome.action.setBadgeBackgroundColor({ tabId: tab.id, color: '#d14343' });
     await chrome.action.setBadgeText({ tabId: tab.id, text: '!' });
-    await chrome.action.setTitle({ tabId: tab.id, title: 'Wireframe X-Ray werkt niet op deze pagina' });
+    await chrome.action.setTitle({ tabId: tab.id, title: 'Wireframe X-Ray does not work on this page' });
   }
 });
 
-// De toolbar op de pagina kan de modus zelf uitzetten.
+// The toolbar on the page can turn the mode off itself.
 chrome.runtime.onMessage.addListener((msg, sender) => {
   if (msg?.type === 'wfx-state' && sender.tab?.id) setBadge(sender.tab.id, msg.active);
 });
 
-// Nieuwe pagina in hetzelfde tabblad: wireframe is weg, badge ook.
+// New page in the same tab: the wireframe is gone, so is the badge.
 chrome.tabs.onUpdated.addListener((tabId, info) => {
   if (info.status === 'loading') {
     chrome.action.setBadgeText({ tabId, text: '' });

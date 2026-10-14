@@ -1,4 +1,4 @@
-// Wireframe X-Ray Import — bouwt een JSON-export van de extensie om tot geneste Figma-frames.
+// Wireframe X-Ray Import — turns a JSON export from the extension into nested Figma frames.
 
 figma.showUI(__html__, { width: 340, height: 330, themeColors: true });
 
@@ -72,7 +72,7 @@ function build(d, parent, ox, oy) {
     t.name = d.n;
     parent.appendChild(t);
     if ((d.lines || []).length > 1) {
-      // Vaste breedte: Figma breekt de regels zelf af, net als de browser.
+      // Fixed width: Figma wraps the lines itself, just like the browser.
       t.resize(Math.max(1, d.w + 2), Math.max(1, d.h));
       t.textAutoResize = 'HEIGHT';
     } else {
@@ -126,7 +126,7 @@ figma.ui.onmessage = async (msg) => {
   try {
     const data = typeof msg.data === 'string' ? JSON.parse(msg.data) : msg.data;
     if (!data || data.format !== 'wireframe-xray' || !data.root) {
-      throw new Error('Dit is geen Wireframe X-Ray export.');
+      throw new Error('This is not a Wireframe X-Ray export.');
     }
     await loadFonts(data.root);
     created = 0;

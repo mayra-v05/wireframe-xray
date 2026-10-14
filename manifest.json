@@ -3,7 +3,7 @@
   "name": "Wireframe X-Ray",
   "short_name": "X-Ray",
   "version": "1.0.0",
-  "description": "Zet iedere website met één klik om in een wireframe en exporteer de structuur naar Figma.",
+  "description": "Turn any website into a wireframe with one click and export the structure to Figma or Claude.",
   "permissions": ["activeTab", "scripting", "storage"],
   "background": {
     "service_worker": "background.js"
@@ -20,7 +20,7 @@
   "commands": {
     "_execute_action": {
       "suggested_key": { "default": "Alt+Shift+W" },
-      "description": "Wireframe-modus aan/uit"
+      "description": "Toggle wireframe mode"
     }
   },
   "icons": {

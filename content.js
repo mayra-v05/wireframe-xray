@@ -1,14 +1,14 @@
 // Wireframe X-Ray — content script
-// Wordt bij elke klik opnieuw geïnjecteerd; de guard zorgt dat alles maar één keer bestaat.
+// Re-injected on every click; the guard makes sure everything exists only once.
 (() => {
   if (window.__wfx) return;
 
   /* ------------------------------------------------------------------ *
-   * Constanten
+   * Constants
    * ------------------------------------------------------------------ */
 
-  // Drie id-selectors die nooit matchen in een :not() geven onze regels
-  // specificiteit (3,1,0), zodat ze vrijwel elke pagina-regel winnen.
+  // Three id selectors that never match, inside a :not(), give our rules
+  // specificity (3,1,0), so they beat almost every page rule.
   const S = ':not(#_wfx#_wfy#_wfz)';
   const UI_TAG = 'wfx-xray-ui';
   const LBL_TAG = 'wfx-xray-labels';
@@ -38,8 +38,8 @@
 
   let active = false;
   let settings = { outlines: true, labels: false, fills: true, inspect: false };
-  const roots = new Set();          // shadow roots die ons stylesheet hebben
-  const sheet = new CSSStyleSheet(); // CSSOM: werkt ook op pagina's met strenge CSP
+  const roots = new Set();          // shadow roots that have our stylesheet
+  const sheet = new CSSStyleSheet(); // CSSOM: also works on pages with a strict CSP
   let observer = null;
   let uiHost = null, ui = null;
   let labelHost = null, labelRoot = null, labelsQueued = false;
@@ -49,7 +49,7 @@
   }).catch(() => {});
 
   /* ------------------------------------------------------------------ *
-   * Kleur → grijswaarde
+   * Color → gray level
    * ------------------------------------------------------------------ */
 
   const colorCtx = document.createElement('canvas').getContext('2d', { willReadFrequently: true });
@@ -64,7 +64,7 @@
       const a = m[4] === undefined ? 1 : m[4].endsWith('%') ? parseFloat(m[4]) / 100 : parseFloat(m[4]);
       c = [+m[1], +m[2], +m[3], a];
     } else {
-      // oklch(), color(), lab() … laat de canvas het omrekenen.
+      // oklch(), color(), lab() … let the canvas convert it.
       colorCtx.clearRect(0, 0, 1, 1);
       colorCtx.fillStyle = '#000';
       colorCtx.fillStyle = str;
@@ -76,8 +76,8 @@
     return c;
   }
 
-  // Lichte vlakken blijven wit, middentonen lichtgrijs, donkere vlakken grijs.
-  // Zo blijft het contrast tussen secties zichtbaar zonder kleur.
+  // Light areas stay white, midtones light gray, dark areas gray.
+  // This keeps the contrast between sections visible without color.
   function fillLevel([r, g, b, a]) {
     const lum = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
     const l = lum * a + (1 - a);
@@ -85,7 +85,7 @@
   }
 
   /* ------------------------------------------------------------------ *
-   * Elementen markeren
+   * Marking elements
    * ------------------------------------------------------------------ */
 
   function landmarkOf(el) {
@@ -99,7 +99,7 @@
     return el.localName === UI_TAG || el.localName === LBL_TAG || el.localName === INS_TAG;
   }
 
-  // Fase 1: alleen lezen (getComputedStyle), zodat de browser één keer stijlen berekent.
+  // Phase 1: read only (getComputedStyle), so the browser computes styles once.
   function inspect(el) {
     if (el.hasAttribute('data-wfx') || SKIP.has(el.tagName) || isOurs(el) || el.ownerSVGElement) return null;
     const ln = el.localName;
@@ -131,7 +131,7 @@
     };
   }
 
-  // Fase 2: alleen schrijven.
+  // Phase 2: write only.
   function apply(info) {
     const { el } = info;
     el.setAttribute('data-wfx', info.fill);
@@ -279,7 +279,7 @@ ${A}::selection { background: #d5ddff !important; }
   }
 
   /* ------------------------------------------------------------------ *
-   * Aan / uit
+   * On / off
    * ------------------------------------------------------------------ */
 
   function activate() {
@@ -287,7 +287,7 @@ ${A}::selection { background: #d5ddff !important; }
     active = true;
     refreshSheet();
 
-    // Eerst markeren (originele stijlen lezen), dan pas het stylesheet aanzetten.
+    // Mark first (read the original styles), only then enable the stylesheet.
     markSubtree(document.documentElement);
     document.adoptedStyleSheets = [...document.adoptedStyleSheets, sheet];
 
@@ -337,7 +337,7 @@ ${A}::selection { background: #d5ddff !important; }
     if (key === 'inspect') {
       if (value) {
         enableInspect();
-        ui?.toast('Hover voor marges, padding en grid · klik om vast te zetten en afstanden te meten · Esc');
+        ui?.toast('Hover for margins, padding and grid · click to lock and measure distances · Esc');
       } else disableInspect();
     }
     ui?.sync();
@@ -392,12 +392,12 @@ ${A}::selection { background: #d5ddff !important; }
       b.style.top = `${y}px`;
       labelRoot.appendChild(b);
       const w = b.offsetWidth, h = b.offsetHeight;
-      // Koppen: label links naast de tekst, zodat het de kop niet afdekt.
+      // Headings: label to the left of the text, so it doesn't cover the heading.
       if (b.className === 'b h' && r.left - w - 4 >= 0) {
         x -= w + 4;
         b.style.borderRadius = '3px';
       }
-      // Labels die elkaar raken (header met nav op dezelfde plek) naast elkaar zetten.
+      // Place overlapping labels (header and nav in the same spot) side by side.
       let moved = true;
       while (moved) {
         moved = false;
@@ -414,7 +414,7 @@ ${A}::selection { background: #d5ddff !important; }
   }
 
   /* ------------------------------------------------------------------ *
-   * Inspect: box model, grid/flex, gaps en afstanden
+   * Inspect: box model, grid/flex, gaps and distances
    * ------------------------------------------------------------------ */
 
   const MEASURE = '#ff3b6b';
@@ -477,7 +477,7 @@ ${A}::selection { background: #d5ddff !important; }
     insRoot.appendChild(d);
   }
 
-  // Ruimte tussen een buitenste en binnenste rechthoek, met waarden per zijde.
+  // Space between an outer and inner rectangle, with values per side.
   function ring(cls, tcls, o, i, [t, r, b, l]) {
     layer(cls, o.l, o.t, o.r - o.l, i.t - o.t);
     layer(cls, o.l, i.b, o.r - o.l, o.b - i.b);
@@ -547,7 +547,7 @@ ${A}::selection { background: #d5ddff !important; }
     });
   }
 
-  // Ruimte tussen opeenvolgende kinderen: zo zie je de afstand tussen secties.
+  // Space between consecutive children: shows the distance between sections.
   function childGaps(el) {
     const rects = inFlowKids(el).slice(0, 80).map((k) => k.getBoundingClientRect()).filter((r) => r.width || r.height);
     for (let i = 1; i < rects.length; i++) {
@@ -584,7 +584,7 @@ ${A}::selection { background: #d5ddff !important; }
     tag('t-d', (x1 + x2) / 2, y, fmt(d));
   }
 
-  // Figma-stijl afstand tussen twee rechthoeken.
+  // Figma-style distance between two rectangles.
   function measure(a, b) {
     const inside = (o, i) => i.left >= o.left - 0.5 && i.right <= o.right + 0.5 && i.top >= o.top - 0.5 && i.bottom <= o.bottom + 0.5;
     if (inside(a, b) || inside(b, a)) {
@@ -628,10 +628,10 @@ ${A}::selection { background: #d5ddff !important; }
 
     if (!compact) {
       if (grid) {
-        add('layout', `grid · ${grid.cols.length} kol × ${grid.rows.length} rij`);
+        add('layout', `grid · ${grid.cols.length} col × ${grid.rows.length} row`);
         if (grid.cols.length) {
           const shown = grid.cols.slice(0, 6).map(fmt).join(' ');
-          add('kolommen', grid.cols.length > 6 ? `${shown} …` : shown);
+          add('columns', grid.cols.length > 6 ? `${shown} …` : shown);
         }
       } else if (d.includes('flex')) {
         add('layout', `flex · ${cs.flexDirection}${cs.flexWrap === 'wrap' ? ' · wrap' : ''}`);
@@ -641,7 +641,7 @@ ${A}::selection { background: #d5ddff !important; }
       if (grid || d.includes('flex')) {
         const rg = num(cs.rowGap), cg = num(cs.columnGap);
         if (rg || cg) add('gap', rg === cg ? fmt(rg) : `${fmt(rg)} / ${fmt(cg)}`);
-        add('uitlijning', `${cs.justifyContent} · ${cs.alignItems}`);
+        add('alignment', `${cs.justifyContent} · ${cs.alignItems}`);
       }
       add('padding', shorthand(quad(cs, 'padding')), '#93c47d');
       add('margin', shorthand(quad(cs, 'margin')), '#f6b26b');
@@ -653,7 +653,7 @@ ${A}::selection { background: #d5ddff !important; }
       if (hasOwnText(el)) {
         const lh = cs.lineHeight === 'normal' ? 'normal' : fmt(num(cs.lineHeight));
         add('font', `${fmt(num(cs.fontSize))}/${lh} · ${cs.fontWeight}`);
-        add('familie', cs.fontFamily.split(',')[0].replace(/["']/g, ''));
+        add('family', cs.fontFamily.split(',')[0].replace(/["']/g, ''));
       }
     }
 
@@ -669,15 +669,15 @@ ${A}::selection { background: #d5ddff !important; }
       dl.append(dt, h('dd', {}, v));
     }
     const hint = selected
-      ? 'Export gebruikt deze selectie · ↑ ouder · ↓ kind · hover een ander element om te meten · Esc heft op'
-      : 'Klik om vast te zetten en afstanden te meten';
+      ? 'Export uses this selection · ↑ parent · ↓ child · hover another element to measure · Esc releases'
+      : 'Click to lock and measure distances';
     const card = h('div', { class: 'l card' },
       h('div', { class: 'hd' }, h('b', {}, nameOf(el)), h('span', {}, `${fmt(r.width)} × ${fmt(r.height)}`)),
       rows.length ? dl : null,
       h('div', { class: 'hint' }, hint));
     insRoot.appendChild(card);
 
-    // Onder het element, anders erboven, anders binnen het beeld.
+    // Below the element, otherwise above it, otherwise inside the viewport.
     const cw = card.offsetWidth, ch = card.offsetHeight;
     const x = Math.min(Math.max(8, r.left), innerWidth - cw - 8);
     let y = r.bottom + 10;
@@ -803,7 +803,7 @@ ${A}::selection { background: #d5ddff !important; }
   }
 
   /* ------------------------------------------------------------------ *
-   * Structuur uitlezen voor Figma
+   * Reading the structure for Figma
    * ------------------------------------------------------------------ */
 
   const MAX_NODES = 8000;
@@ -882,7 +882,7 @@ ${A}::selection { background: #d5ddff !important; }
     const lh = cs.lineHeight === 'normal' ? fs * 1.2 : parseFloat(cs.lineHeight) || fs * 1.2;
     const tt = cs.textTransform;
 
-    // Woorden groeperen per regel, zodat de regelafbreking klopt in Figma.
+    // Group words per line, so line breaks match in Figma.
     const lines = [];
     const re = /\S+/g;
     let m, words = 0;
@@ -959,7 +959,7 @@ ${A}::selection { background: #d5ddff !important; }
       return;
     }
 
-    // Inline elementen (span, strong, a …) worden platgeslagen: hun tekst hoort bij de ouder.
+    // Inline elements (span, strong, a …) are flattened: their text belongs to the parent.
     if (cs.display === 'inline') return walkChildren(el, parent);
     if (r.width < 1 || r.height < 1) {
       if (cs.overflow === 'visible') walkChildren(el, parent);
@@ -997,7 +997,7 @@ ${A}::selection { background: #d5ddff !important; }
     nodeCount++;
     walkChildren(el, node);
 
-    // Velden hebben geen tekst-nodes; waarde of placeholder als tekst toevoegen.
+    // Fields have no text nodes; add the value or placeholder as text.
     if (isField && !node.c.length) {
       const value = ln === 'select' ? el.selectedOptions?.[0]?.textContent : el.value || el.placeholder;
       if (squash(value)) {
@@ -1012,7 +1012,7 @@ ${A}::selection { background: #d5ddff !important; }
       }
     }
 
-    // Lege wrappers weglaten en wrappers met één kind van dezelfde maat samenvouwen.
+    // Drop empty wrappers and collapse wrappers with a single child of the same size.
     if (!fill && !stroke && !el.hasAttribute('data-wfx-lm')) {
       if (!node.c.length) return;
       const only = node.c[0];
@@ -1037,7 +1037,7 @@ ${A}::selection { background: #d5ddff !important; }
     }
   }
 
-  // Met een element: alleen die sectie, met (0,0) linksboven in de sectie.
+  // With an element: only that section, with (0,0) at the section's top left.
   function buildTree(scope) {
     nodeCount = 0;
     if (scope?.isConnected) {
@@ -1081,7 +1081,7 @@ ${A}::selection { background: #d5ddff !important; }
   }
 
   /* ------------------------------------------------------------------ *
-   * SVG — plakbaar in Figma; <g id> wordt de laagnaam
+   * SVG — pasteable into Figma; <g id> becomes the layer name
    * ------------------------------------------------------------------ */
 
   function layoutOf(cs) {
@@ -1098,11 +1098,11 @@ ${A}::selection { background: #d5ddff !important; }
   }
 
   /* ------------------------------------------------------------------ *
-   * Claude — leesbare outline met layout en spacing
+   * Claude — readable outline with layout and spacing
    * ------------------------------------------------------------------ */
 
   const MAX_CLAUDE_CHARS = 60000;
-  const BG_LABEL = { 1: 'wit vlak', 2: 'lichtgrijs vlak', 3: 'donker vlak', h: 'achtergrondafbeelding' };
+  const BG_LABEL = { 1: 'white fill', 2: 'light gray fill', 3: 'dark fill', h: 'background image' };
 
   function toClaude(data) {
     const r = (n) => fmt(n);
@@ -1119,7 +1119,7 @@ ${A}::selection { background: #d5ddff !important; }
       size += line.length + 1;
       if (size > MAX_CLAUDE_CHARS) {
         cut = true;
-        lines.push('- … (ingekort: pagina is te groot)');
+        lines.push('- … (truncated: page is too large)');
         return;
       }
       lines.push(line);
@@ -1132,8 +1132,8 @@ ${A}::selection { background: #d5ddff !important; }
       const align = [l.jc, l.ai].filter((v) => v && v !== 'normal' && v !== 'flex-start' && v !== 'start' && v !== 'stretch');
       const al = align.length ? ` · ${align.join(' / ')}` : '';
       if (l.t === 'grid') {
-        const cols = l.cols.length ? ` ${l.cols.length} kol (${l.cols.slice(0, 8).map(r).join(' ')}${l.cols.length > 8 ? ' …' : ''})` : '';
-        return `grid${cols}${l.rows > 1 ? ` × ${l.rows} rij` : ''}${gap}${al}`;
+        const cols = l.cols.length ? ` ${l.cols.length} col (${l.cols.slice(0, 8).map(r).join(' ')}${l.cols.length > 8 ? ' …' : ''})` : '';
+        return `grid${cols}${l.rows > 1 ? ` × ${l.rows} row` : ''}${gap}${al}`;
       }
       return `flex ${l.dir}${l.wrap ? ' wrap' : ''}${gap}${al}`;
     }
@@ -1141,7 +1141,7 @@ ${A}::selection { background: #d5ddff !important; }
     function node(n, depth, spaceAbove) {
       const above = spaceAbove >= 1 ? `↑${r(spaceAbove)} ` : '';
       if (n.t === 'text') {
-        push(depth, `${above}${quote(n.text)} · ${font(n)}${n.u ? ' · onderstreept' : ''}`);
+        push(depth, `${above}${quote(n.text)} · ${font(n)}${n.u ? ' · underlined' : ''}`);
         return;
       }
       if (n.t === 'img' || n.t === 'icon' || n.t === 'embed') {
@@ -1159,7 +1159,7 @@ ${A}::selection { background: #d5ddff !important; }
       if (mar) parts.push(`margin ${mar}`);
       if (n.mw) parts.push(`max-width ${n.mw}`);
       if (n.bg) parts.push(BG_LABEL[n.bg]);
-      if (n.stroke) parts.push(`rand ${r(n.stroke)}`);
+      if (n.stroke) parts.push(`border ${r(n.stroke)}`);
       if (n.r) parts.push(`radius ${r(n.r)}`);
       if (only) parts.push(`${quote(only.text)} ${font(only)}`);
       push(depth, parts.join(' · '));
@@ -1169,7 +1169,7 @@ ${A}::selection { background: #d5ddff !important; }
     function children(n, depth) {
       let prev = null;
       for (const c of n.c) {
-        // Verticale ruimte tot het vorige element in dezelfde kolom.
+        // Vertical space to the previous element in the same column.
         let space = 0;
         if (prev && c.y >= prev.y + prev.h && Math.min(c.x + c.w, prev.x + prev.w) > Math.max(c.x, prev.x)) {
           space = c.y - (prev.y + prev.h);
@@ -1183,17 +1183,17 @@ ${A}::selection { background: #d5ddff !important; }
     else children(data.root, 0);
 
     return [
-      `# Wireframe-structuur: ${data.title}`,
+      `# Wireframe structure: ${data.title}`,
       '',
-      `Bron: ${data.url}`,
+      `Source: ${data.url}`,
       data.scope
-        ? `Alleen deze sectie: ${data.scope} · ${r(data.width)}×${r(data.height)}px · viewport ${r(document.documentElement.clientWidth)}px breed`
-        : `Viewport ${r(data.width)}px breed · pagina ${r(data.height)}px hoog`,
+        ? `Only this section: ${data.scope} · ${r(data.width)}×${r(data.height)}px · viewport ${r(document.documentElement.clientWidth)}px wide`
+        : `Viewport ${r(data.width)}px wide · page ${r(data.height)}px tall`,
       '',
-      'Deze outline is gemaakt met Wireframe X-Ray. Hij beschrijft de layout, hiërarchie en spacing van de pagina; kleuren en afbeeldingen zijn weggelaten.',
-      'Notatie: [b×h] = afmeting in px · ↑n = verticale ruimte tot het vorige element · pad/margin = boven rechts onder links (CSS-shorthand) · gap = rij/kolom · tekst als "…" · 16px/400 = fontgrootte/gewicht.',
+      'This outline was made with Wireframe X-Ray. It describes the layout, hierarchy and spacing of the page; colors and images are left out.',
+      'Notation: [w×h] = size in px · ↑n = vertical space to the previous element · pad/margin = top right bottom left (CSS shorthand) · gap = row/column · text as "…" · 16px/400 = font size/weight.',
       '',
-      '## Structuur',
+      '## Structure',
       '',
       ...lines,
       '',
@@ -1245,7 +1245,7 @@ ${A}::selection { background: #d5ddff !important; }
   }
 
   /* ------------------------------------------------------------------ *
-   * Export-acties
+   * Export actions
    * ------------------------------------------------------------------ */
 
   async function copyText(text) {
@@ -1265,7 +1265,7 @@ ${A}::selection { background: #d5ddff !important; }
   }
 
   function download(text, type, ext) {
-    const slug = (location.hostname.replace(/^www\./, '') || 'pagina').replace(/[^a-z0-9.-]+/gi, '-');
+    const slug = (location.hostname.replace(/^www\./, '') || 'page').replace(/[^a-z0-9.-]+/gi, '-');
     const blob = new Blob([text], { type });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
@@ -1277,39 +1277,39 @@ ${A}::selection { background: #d5ddff !important; }
   }
 
   async function runExport(kind) {
-    ui.toast('Structuur verzamelen…', true);
-    await new Promise((r) => setTimeout(r, 30)); // toast eerst laten tekenen
+    ui.toast('Collecting structure…', true);
+    await new Promise((r) => setTimeout(r, 30)); // let the toast paint first
     let data;
     try {
       data = buildTree(selected);
     } catch (err) {
-      ui.toast(`Export mislukt: ${err.message}`);
+      ui.toast(`Export failed: ${err.message}`);
       return;
     }
-    const note = (data.truncated ? ' (ingekort: zeer grote pagina)' : '') + (data.scope ? ` · alleen ${data.scope}` : '');
+    const note = (data.truncated ? ' (truncated: very large page)' : '') + (data.scope ? ` · only ${data.scope}` : '');
 
     if (kind === 'copy-svg') {
       const ok = await copyText(toSVG(data));
-      ui.toast(ok ? `Gekopieerd — plak in Figma met ⌘V / Ctrl+V${note}` : 'Kopiëren is geblokkeerd op deze pagina. Gebruik Download SVG.');
+      ui.toast(ok ? `Copied — paste into Figma with ⌘V / Ctrl+V${note}` : 'Copying is blocked on this page. Use Download SVG.');
     } else if (kind === 'svg') {
       download(toSVG(data), 'image/svg+xml', 'svg');
-      ui.toast(`SVG gedownload — sleep het bestand in Figma${note}`);
+      ui.toast(`SVG downloaded — drag the file into Figma${note}`);
     } else if (kind === 'json') {
       download(JSON.stringify(data), 'application/json', 'json');
-      ui.toast(`JSON gedownload — importeer met de X-Ray Figma-plugin${note}`);
+      ui.toast(`JSON downloaded — import it with the X-Ray Figma plugin${note}`);
     } else if (kind === 'claude' || kind === 'claude-open') {
       const ok = await copyText(toClaude(data));
       if (!ok) {
-        ui.toast('Kopiëren is geblokkeerd op deze pagina.');
+        ui.toast('Copying is blocked on this page.');
         return;
       }
       if (kind === 'claude-open') {
         const tab = window.open('https://claude.ai/new', '_blank', 'noopener');
         ui.toast(tab === null
-          ? 'Gekopieerd — open claude.ai en plak met ⌘V / Ctrl+V (pop-up werd geblokkeerd)'
-          : `Gekopieerd — plak in Claude met ⌘V / Ctrl+V en stel je vraag${note}`);
+          ? 'Copied — open claude.ai and paste with ⌘V / Ctrl+V (pop-up was blocked)'
+          : `Copied — paste into Claude with ⌘V / Ctrl+V and ask your question${note}`);
       } else {
-        ui.toast(`Gekopieerd — plak in Claude met ⌘V / Ctrl+V en stel je vraag${note}`);
+        ui.toast(`Copied — paste into Claude with ⌘V / Ctrl+V and ask your question${note}`);
       }
     }
   }
@@ -1318,7 +1318,7 @@ ${A}::selection { background: #d5ddff !important; }
    * Toolbar
    * ------------------------------------------------------------------ */
 
-  // Elementen bouwen zonder innerHTML (Trusted Types / CSP-veilig).
+  // Build elements without innerHTML (Trusted Types / CSP safe).
   function h(tag, props = {}, ...children) {
     const el = document.createElement(tag);
     for (const [k, v] of Object.entries(props)) {
@@ -1428,24 +1428,24 @@ ${A}::selection { background: #d5ddff !important; }
       h('hr'),
       h('div', { class: 'group' }, 'Figma'),
       h('button', { role: 'menuitem', onclick: () => pick('copy-svg') },
-        'Kopieer voor Figma', h('small', {}, 'Plak met ⌘V / Ctrl+V. Lagen heten Header, Navigation, H1 …')),
+        'Copy for Figma', h('small', {}, 'Paste with ⌘V / Ctrl+V. Layers are named Header, Navigation, H1 …')),
       h('button', { role: 'menuitem', onclick: () => pick('svg') },
-        'Download SVG', h('small', {}, 'Sleep het bestand in Figma.')),
+        'Download SVG', h('small', {}, 'Drag the file into Figma.')),
       h('button', { role: 'menuitem', onclick: () => pick('json') },
-        'Download JSON voor de plugin', h('small', {}, 'Echte frames en tekstlagen via de X-Ray Figma-plugin.')),
+        'Download JSON for the plugin', h('small', {}, 'Real frames and text layers via the X-Ray Figma plugin.')),
       h('hr'),
       h('div', { class: 'group' }, 'Claude'),
       h('button', { role: 'menuitem', onclick: () => pick('claude-open') },
-        'Kopieer & open Claude', h('small', {}, 'Structuur met layout en spacing als tekst; plak in een nieuwe chat.')),
+        'Copy & open Claude', h('small', {}, 'Structure with layout and spacing as text; paste into a new chat.')),
       h('button', { role: 'menuitem', onclick: () => pick('claude') },
-        'Kopieer voor Claude', h('small', {}, 'Alleen kopiëren, bijv. voor Claude Code of een bestaande chat.')),
+        'Copy for Claude', h('small', {}, 'Copy only, e.g. for Claude Code or an existing chat.')),
     );
     const menuBtn = h('button', { class: 'primary full', 'aria-haspopup': 'menu', 'aria-expanded': 'false', onclick: () => setMenu(menu.hidden) },
       svgIcon(['M8 2.5v7', 'M5 6.5l3 3 3-3', 'M3 11.5v1.5h10v-1.5']), 'Export');
 
-    const minBtn = h('button', { class: 'icon full', title: 'Inklappen', 'aria-label': 'Toolbar inklappen', onclick: () => bar.classList.add('min') },
+    const minBtn = h('button', { class: 'icon full', title: 'Collapse', 'aria-label': 'Collapse toolbar', onclick: () => bar.classList.add('min') },
       svgIcon(['M4 8h8']));
-    const closeBtn = h('button', { class: 'icon', title: 'Wireframe uitzetten (Alt+Shift+W)', 'aria-label': 'Wireframe uitzetten', onclick: () => {
+    const closeBtn = h('button', { class: 'icon', title: 'Turn off wireframe (Alt+Shift+W)', 'aria-label': 'Turn off wireframe', onclick: () => {
       deactivate();
       chrome.runtime.sendMessage({ type: 'wfx-state', active: false }).catch(() => {});
     } }, svgIcon(['M4.5 4.5l7 7', 'M11.5 4.5l-7 7']));
@@ -1458,7 +1458,7 @@ ${A}::selection { background: #d5ddff !important; }
       h('div', { class: 'sep full' }),
       toggle('outlines', 'Outlines'),
       toggle('labels', 'Labels'),
-      toggle('fills', h('span', {}, 'Vlakken')),
+      toggle('fills', h('span', {}, 'Fills')),
       toggle('inspect', 'Inspect'),
       h('div', { class: 'sep full' }),
       h('div', { class: 'wrap full' }, menuBtn, menu),
@@ -1472,13 +1472,13 @@ ${A}::selection { background: #d5ddff !important; }
       const sel = selected?.isConnected ? selected : null;
       const action = (label, fn) => h('button', { class: 'link', onclick: fn }, label);
       scopeRow.replaceChildren(
-        h('div', {}, h('span', {}, 'Bereik'), h('b', {}, sel ? nameOf(sel) : 'Hele pagina')),
+        h('div', {}, h('span', {}, 'Scope'), h('b', {}, sel ? nameOf(sel) : 'Whole page')),
         sel
-          ? action('Hele pagina', () => { selected = null; queueInspect(); renderScope(); })
-          : action('Kies sectie', () => {
+          ? action('Whole page', () => { selected = null; queueInspect(); renderScope(); })
+          : action('Choose section', () => {
             setMenu(false);
             if (!settings.inspect) setSetting('inspect', true);
-            ui.toast('Klik op de sectie die je wilt exporteren · ↑ selecteert het ouder-element');
+            ui.toast('Click the section you want to export · ↑ selects the parent element');
           }),
       );
     }
@@ -1521,7 +1521,7 @@ ${A}::selection { background: #d5ddff !important; }
   }
 
   /* ------------------------------------------------------------------ *
-   * Publieke API voor background.js
+   * Public API for background.js
    * ------------------------------------------------------------------ */
 
   window.__wfx = {
@@ -1532,7 +1532,7 @@ ${A}::selection { background: #d5ddff !important; }
       else deactivate();
       return active;
     },
-    // Exportdata zonder download, handig voor debuggen vanuit de console.
+    // Export data without downloading, handy for debugging from the console.
     structure(scope = selected) {
       const data = buildTree(scope);
       return { data, svg: toSVG(data), claude: toClaude(data) };
