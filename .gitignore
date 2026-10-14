@@ -1,0 +1,5 @@
+.DS_Store
+node_modules/
+*.zip
+# oude kopie van de extensie
+wireframe-xray/

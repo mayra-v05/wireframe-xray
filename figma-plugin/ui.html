@@ -1,0 +1,70 @@
+<style>
+  :root { --bg: var(--figma-color-bg, #fff); --fg: var(--figma-color-text, #1e1e1e); --muted: var(--figma-color-text-secondary, #6b6b6b);
+          --line: var(--figma-color-border, #e5e5e5); --accent: #3b6cff; }
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 16px; font: 12px/1.45 Inter, system-ui, sans-serif; color: var(--fg); background: var(--bg); }
+  h1 { font-size: 13px; font-weight: 600; margin: 0 0 4px; }
+  p { margin: 0 0 12px; color: var(--muted); }
+  .drop { display: grid; place-items: center; gap: 4px; text-align: center; height: 120px; border: 1.5px dashed var(--line);
+          border-radius: 8px; cursor: pointer; color: var(--muted); transition: border-color .15s, background .15s; }
+  .drop.over, .drop:hover { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 6%, transparent); }
+  .drop strong { color: var(--fg); font-weight: 600; }
+  textarea { width: 100%; height: 56px; margin-top: 10px; resize: none; padding: 8px; border: 1px solid var(--line); border-radius: 6px;
+             background: transparent; color: var(--fg); font: 11px/1.4 ui-monospace, monospace; }
+  button { margin-top: 10px; width: 100%; height: 32px; border: 0; border-radius: 6px; background: var(--accent); color: #fff; font: 600 12px Inter, system-ui, sans-serif; cursor: pointer; }
+  button:disabled { opacity: .5; cursor: default; }
+  #status { margin-top: 8px; min-height: 18px; color: var(--muted); }
+  #status.err { color: #d14343; }
+  input[type=file] { display: none; }
+</style>
+
+<h1>Wireframe X-Ray Import</h1>
+<p>Kies het <code>.json</code>-bestand dat de extensie downloadt, of plak de inhoud hieronder.</p>
+
+<label class="drop" id="drop">
+  <strong>Kies of sleep een JSON-bestand</strong>
+  <span>wireframe-….json</span>
+  <input type="file" id="file" accept=".json,application/json">
+</label>
+<textarea id="paste" placeholder="…of plak de JSON hier"></textarea>
+<button id="go" disabled>Importeer als frames</button>
+<div id="status" role="status"></div>
+
+<script>
+  const $ = (id) => document.getElementById(id);
+  const status = (msg, err = false) => { $('status').textContent = msg; $('status').className = err ? 'err' : ''; };
+  let json = '';
+
+  function setJSON(text, label) {
+    json = text.trim();
+    $('go').disabled = !json;
+    if (label) status(label);
+  }
+
+  async function readFile(file) {
+    if (!file) return;
+    setJSON(await file.text(), `Geladen: ${file.name}`);
+  }
+
+  $('file').addEventListener('change', (e) => readFile(e.target.files[0]));
+  $('paste').addEventListener('input', (e) => setJSON(e.target.value, ''));
+
+  const drop = $('drop');
+  drop.addEventListener('dragover', (e) => { e.preventDefault(); drop.classList.add('over'); });
+  drop.addEventListener('dragleave', () => drop.classList.remove('over'));
+  drop.addEventListener('drop', (e) => { e.preventDefault(); drop.classList.remove('over'); readFile(e.dataTransfer.files[0]); });
+
+  $('go').addEventListener('click', () => {
+    $('go').disabled = true;
+    status('Bezig met bouwen…');
+    parent.postMessage({ pluginMessage: { type: 'import', data: json } }, '*');
+  });
+
+  onmessage = (e) => {
+    const msg = e.data.pluginMessage;
+    if (!msg) return;
+    $('go').disabled = !json;
+    if (msg.type === 'done') status(`Klaar — ${msg.count} lagen aangemaakt.`);
+    if (msg.type === 'error') status(msg.message, true);
+  };
+</script>
